@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>S-MART-Открытая 2.5 — 3D Каталог & QR Маркировка</title>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #0b1120; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
+    header { background: #1e293b; border-bottom: 1px solid #334155; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-logo { width: 40px; height: 40px; background: linear-gradient(135deg, #0284c7, #38bdf8); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: white; }
+    .brand-title h1 { font-size: 1.25rem; font-weight: 700; color: #f1f5f9; }
+    .brand-title p { font-size: 0.78rem; color: #94a3b8; }
+    .badge { background: #0284c7; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .layout { flex: 1; display: grid; grid-template-columns: 1fr 450px; min-height: calc(100vh - 130px); }
+    @media (max-width: 1024px) { .layout { grid-template-columns: 1fr; } }
+    .viewer-area { display: flex; flex-direction: column; position: relative; background: radial-gradient(circle at center, #1e293b 0%, #0b1120 100%); border-right: 1px solid #1e293b; }
+    .viewer-header { padding: 12px 20px; background: rgba(15, 23, 42, 0.7); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; }
+    .current-title { font-size: 1rem; font-weight: 600; color: #38bdf8; max-width: 500px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dedicated-btn { background: #0284c7; color: white; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; text-decoration: none; font-weight: 500; }
+    .viewer-box { position: relative; flex: 1; min-height: 480px; }
+    model-viewer { width: 100%; height: 100%; min-height: 480px; --poster-color: transparent; }
+    .hint { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.85); padding: 6px 16px; border-radius: 20px; font-size: 0.75rem; color: #94a3b8; pointer-events: none; }
+    .sidebar { background: #0f172a; display: flex; flex-direction: column; overflow-y: auto; max-height: calc(100vh - 130px); }
+    .sidebar-block { padding: 16px 20px; border-bottom: 1px solid #1e293b; }
+    .sidebar-block h3 { font-size: 0.88rem; text-transform: uppercase; letter-spacing: 0.7px; color: #94a3b8; margin-bottom: 12px; }
+    .search-input { width: 100%; background: #1e293b; border: 1px solid #334155; color: #f8fafc; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; outline: none; }
+    .filter-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .filter-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 4px 10px; border-radius: 14px; font-size: 0.72rem; cursor: pointer; }
+    .filter-btn.active { background: #0284c7; color: white; border-color: #0284c7; }
+    .items-container { display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto; }
+    .part-item { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; cursor: pointer; }
+    .part-item:hover { border-color: #38bdf8; }
+    .part-item.active { border-color: #38bdf8; background: #132a48; }
+    .part-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .part-item-header h4 { font-size: 0.85rem; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 270px; }
+    .cat-pill { font-size: 0.65rem; background: #334155; color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+    .part-item-body { display: flex; justify-content: space-between; align-items: center; }
+    .file-name { font-size: 0.72rem; color: #94a3b8; }
+    .open-link { font-size: 0.75rem; color: #38bdf8; text-decoration: none; font-weight: 500; }
+    .spec-card { background: #1e293b; border-radius: 8px; padding: 14px; border: 1px solid #334155; }
+    .spec-table { width: 100%; font-size: 0.8rem; border-collapse: collapse; margin-bottom: 12px; }
+    .spec-table td { padding: 5px 0; border-bottom: 1px solid #334155; }
+    .spec-table td:first-child { color: #94a3b8; }
+    .spec-table td:last-child { text-align: right; font-weight: 600; color: #f8fafc; }
+    .qr-box { display: flex; align-items: center; gap: 12px; background: #0b1120; padding: 10px; border-radius: 8px; border: 1px solid #334155; }
+    .qr-box img { width: 68px; height: 68px; background: white; padding: 3px; border-radius: 6px; }
+    .qr-box-content { flex: 1; }
+    .qr-box-content h5 { font-size: 0.78rem; color: #f1f5f9; margin-bottom: 4px; }
+    .qr-box-content a { font-size: 0.72rem; color: #38bdf8; text-decoration: none; }
+    footer { padding: 12px 24px; background: #09101d; border-top: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #64748b; }
+    footer a { color: #38bdf8; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-logo">3D</div>
+      <div class="brand-title">
+        <h1>S-MART-Открытая 2.5</h1>
+        <p>3D-каталог деталей (GLB) & система производственной QR-маркировки</p>
+      </div>
+    </div>
+    <span class="badge">Всего моделей: 78</span>
+  </header>
+  <div class="layout">
+    <section class="viewer-area">
+      <div class="viewer-header">
+        <span class="current-title" id="activeTitle">Главная сборка</span>
+        <a id="dedicatedLink" href="#" class="dedicated-btn">Открыть отдельную страницу &rarr;</a>
+      </div>
+      <div class="viewer-box">
+        <div class="hint">Вращайте модель мышью или пальцем &bull; Колесико — зум</div>
+        <model-viewer id="mainViewer" src="" alt="3D Модель" auto-rotate camera-controls touch-action="pan-y" shadow-intensity="1.3" exposure="1" ar></model-viewer>
+      </div>
+    </section>
+    <aside class="sidebar">
+      <div class="sidebar-block">
+        <h3>Каталог деталей (78)</h3>
+        <input type="text" id="searchInput" class="search-input" placeholder="Поиск по названию или металлу..." oninput="handleSearch()">
+        <div class="filter-pills"><button class="filter-btn active" onclick="filterCategory('all')">Все модели (78)</button><button class="filter-btn" onclick="filterCategory('Главная сборка')">Главная сборка (1)</button><button class="filter-btn" onclick="filterCategory('Подсборки изделия')">Подсборки изделия (11)</button><button class="filter-btn" onclick="filterCategory('Узел 001 (Основание и распределение)')">Узел 001 (Основание и распределение) (26)</button><button class="filter-btn" onclick="filterCategory('Узел 002 (Каркас и короб)')">Узел 002 (Каркас и короб) (16)</button><button class="filter-btn" onclick="filterCategory('Узел 003 (Стойки и кронштейны)')">Узел 003 (Стойки и кронштейны) (16)</button><button class="filter-btn" onclick="filterCategory('Узел 004 (Монтажные элементы)')">Узел 004 (Монтажные элементы) (1)</button><button class="filter-btn" onclick="filterCategory('Узел 005 (Боковины и профили)')">Узел 005 (Боковины и профили) (7)</button></div>
+        <div class="items-container" id="partsList">
+        <div class="part-item" data-category="Подсборки изделия" data-id="Open_Lower_Version_Подсборка" onclick="selectPart('Open_Lower_Version_Подсборка')" id="card-Open_Lower_Version_Подсборка">
+          <div class="part-item-header">
+            <h4>Open Lower Version_Подсборка</h4>
+            <span class="cat-pill">Подсборка</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Подсборки изделия</span>
+            <a href="Open_Lower_Version_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Подсборки изделия" data-id="Open_Top_Version_Подсборка" onclick="selectPart('Open_Top_Version_Подсборка')" id="card-Open_Top_Version_Подсборка">
+          <div class="part-item-header">
+            <h4>Open Top Version_Подсборка</h4>
+            <span class="cat-pill">Подсборка</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Подсборки изделия</span>
+            <a href="Open_Top_Version_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Подсборки изделия" data-id="Right_support_MIR_Подсборка" onclick="selectPart('Right_support_MIR_Подсборка')" id="card-Right_support_MIR_Подсборка">
+          <div class="part-item-header">
+            <h4>Right support_MIR_Подсборка</h4>
+            <span class="cat-pill">Подсборка</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Подсборки изделия</span>
+            <a href="Right_support_MIR_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Подсборки изделия" data-id="Right_support_Подсборка" onclick="selectPart('Right_support_Подсборка')" id="card-Right_support_Подсборка">
+          <div class="part-item-header">
+            <h4>Right support_Подсборка</h4>
+            <span class="cat-pill">Подсборка</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Подсборки изделия</span>
+            <a href="Right_support_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.001_Closed_Оцинк_0_5мм" onclick="selectPart('S-MART.001.001_Closed_Оцинк_0_5мм')" id="card-S-MART.001.001_Closed_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.001_Closed_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.001_Closed_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.005_CPY_Оцинк_0_5мм" onclick="selectPart('S-MART.001.005_CPY_Оцинк_0_5мм')" id="card-S-MART.001.005_CPY_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.005_CPY_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.005_CPY_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.010_Open1_Оцинк_1мм" onclick="selectPart('S-MART.001.010_Open1_Оцинк_1мм')" id="card-S-MART.001.010_Open1_Оцинк_1мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.010_Open1_Оцинк_1мм</h4>
+            <span class="cat-pill">1мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.010_Open1_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.011_MIR_Оцинк_0_5мм" onclick="selectPart('S-MART.001.011_MIR_Оцинк_0_5мм')" id="card-S-MART.001.011_MIR_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.011_MIR_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.011_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.012_MIR_Оцинк_0_5мм" onclick="selectPart('S-MART.001.012_MIR_Оцинк_0_5мм')" id="card-S-MART.001.012_MIR_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.012_MIR_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.012_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.015_Open1_Оцинк_0_5мм" onclick="selectPart('S-MART.001.015_Open1_Оцинк_0_5мм')" id="card-S-MART.001.015_Open1_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.015_Open1_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.015_Open1_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.019_Closed_Оцинк_0_5мм" onclick="selectPart('S-MART.001.019_Closed_Оцинк_0_5мм')" id="card-S-MART.001.019_Closed_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.019_Closed_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.019_Closed_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.020_MIR_Оцинк_0_5мм" onclick="selectPart('S-MART.001.020_MIR_Оцинк_0_5мм')" id="card-S-MART.001.020_MIR_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.020_MIR_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.020_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.020_Оцинк_0_5мм" onclick="selectPart('S-MART.001.020_Оцинк_0_5мм')" id="card-S-MART.001.020_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.020_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.020_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.023_Оцинк_0_5мм" onclick="selectPart('S-MART.001.023_Оцинк_0_5мм')" id="card-S-MART.001.023_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.023_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.023_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.024_Оцинк_0_5мм" onclick="selectPart('S-MART.001.024_Оцинк_0_5мм')" id="card-S-MART.001.024_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.024_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.024_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.025_Оцинк_0_5мм" onclick="selectPart('S-MART.001.025_Оцинк_0_5мм')" id="card-S-MART.001.025_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.025_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.025_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.026_Чёрная_сталь_2мм" onclick="selectPart('S-MART.001.026_Чёрная_сталь_2мм')" id="card-S-MART.001.026_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.026_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.026_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.033_Оцинк_0_5мм" onclick="selectPart('S-MART.001.033_Оцинк_0_5мм')" id="card-S-MART.001.033_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.033_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.033_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.034_Оцинк_0_5мм" onclick="selectPart('S-MART.001.034_Оцинк_0_5мм')" id="card-S-MART.001.034_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.034_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.034_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="S-MART.001.035_Оцинк_0_5мм" onclick="selectPart('S-MART.001.035_Оцинк_0_5мм')" id="card-S-MART.001.035_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.001.035_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="S-MART.001.035_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="S-MART.002.007_MIR_Оцинк_0_5мм" onclick="selectPart('S-MART.002.007_MIR_Оцинк_0_5мм')" id="card-S-MART.002.007_MIR_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.002.007_MIR_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="S-MART.002.007_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="S-MART.002.008_MIR_Оцинк_0_5мм" onclick="selectPart('S-MART.002.008_MIR_Оцинк_0_5мм')" id="card-S-MART.002.008_MIR_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.002.008_MIR_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="S-MART.002.008_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="S-MART.002.009_MIR_Оцинк_0_5мм" onclick="selectPart('S-MART.002.009_MIR_Оцинк_0_5мм')" id="card-S-MART.002.009_MIR_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.002.009_MIR_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="S-MART.002.009_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="S-MART.002.010_MIR_Оцинк_0_5мм" onclick="selectPart('S-MART.002.010_MIR_Оцинк_0_5мм')" id="card-S-MART.002.010_MIR_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.002.010_MIR_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="S-MART.002.010_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="S-MART.002.011_CPY_Чёрная_сталь_2мм" onclick="selectPart('S-MART.002.011_CPY_Чёрная_сталь_2мм')" id="card-S-MART.002.011_CPY_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.002.011_CPY_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="S-MART.002.011_CPY_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="S-MART.002.011_Чёрная_сталь_2мм" onclick="selectPart('S-MART.002.011_Чёрная_сталь_2мм')" id="card-S-MART.002.011_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.002.011_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="S-MART.002.011_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="S-MART.002.012_Оцинк_0_5мм" onclick="selectPart('S-MART.002.012_Оцинк_0_5мм')" id="card-S-MART.002.012_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.002.012_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="S-MART.002.012_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="S-MART.002.020_Оцинк_0_5мм" onclick="selectPart('S-MART.002.020_Оцинк_0_5мм')" id="card-S-MART.002.020_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.002.020_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="S-MART.002.020_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="S-MART.003.001_MIR_Чёрная_сталь_2мм" onclick="selectPart('S-MART.003.001_MIR_Чёрная_сталь_2мм')" id="card-S-MART.003.001_MIR_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.003.001_MIR_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="S-MART.003.001_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="S-MART.003.002_MIR_Чёрная_сталь_2мм" onclick="selectPart('S-MART.003.002_MIR_Чёрная_сталь_2мм')" id="card-S-MART.003.002_MIR_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.003.002_MIR_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="S-MART.003.002_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="S-MART.003.003_MIR_Чёрная_сталь_2мм" onclick="selectPart('S-MART.003.003_MIR_Чёрная_сталь_2мм')" id="card-S-MART.003.003_MIR_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.003.003_MIR_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="S-MART.003.003_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="S-MART.003.004_MIR_Чёрная_сталь_2мм" onclick="selectPart('S-MART.003.004_MIR_Чёрная_сталь_2мм')" id="card-S-MART.003.004_MIR_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.003.004_MIR_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="S-MART.003.004_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="S-MART.003.005_CPY_MIR_Чёрная_сталь_2мм" onclick="selectPart('S-MART.003.005_CPY_MIR_Чёрная_сталь_2мм')" id="card-S-MART.003.005_CPY_MIR_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.003.005_CPY_MIR_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="S-MART.003.005_CPY_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="S-MART.003.005_CPY_Чёрная_сталь_2мм" onclick="selectPart('S-MART.003.005_CPY_Чёрная_сталь_2мм')" id="card-S-MART.003.005_CPY_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.003.005_CPY_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="S-MART.003.005_CPY_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="S-MART.003.006_CPY1_Чёрная_сталь_2мм" onclick="selectPart('S-MART.003.006_CPY1_Чёрная_сталь_2мм')" id="card-S-MART.003.006_CPY1_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.003.006_CPY1_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="S-MART.003.006_CPY1_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="S-MART.003.006_CPY_CPY_Чёрная_сталь_2мм" onclick="selectPart('S-MART.003.006_CPY_CPY_Чёрная_сталь_2мм')" id="card-S-MART.003.006_CPY_CPY_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.003.006_CPY_CPY_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="S-MART.003.006_CPY_CPY_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="S-MART.003.012_Оцинк_1_2мм" onclick="selectPart('S-MART.003.012_Оцинк_1_2мм')" id="card-S-MART.003.012_Оцинк_1_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.003.012_Оцинк_1,2мм</h4>
+            <span class="cat-pill">1,2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="S-MART.003.012_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 004 (Монтажные элементы)" data-id="S-MART.004.011_Чёрная_сталь_2мм" onclick="selectPart('S-MART.004.011_Чёрная_сталь_2мм')" id="card-S-MART.004.011_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.004.011_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 004 (Монтажные элементы)</span>
+            <a href="S-MART.004.011_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 005 (Боковины и профили)" data-id="S-MART.005.001_MIR_Оцинк_1_2мм" onclick="selectPart('S-MART.005.001_MIR_Оцинк_1_2мм')" id="card-S-MART.005.001_MIR_Оцинк_1_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.005.001_MIR_Оцинк_1,2мм</h4>
+            <span class="cat-pill">1,2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 005 (Боковины и профили)</span>
+            <a href="S-MART.005.001_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 005 (Боковины и профили)" data-id="S-MART.005.001_Оцинк_1_2мм" onclick="selectPart('S-MART.005.001_Оцинк_1_2мм')" id="card-S-MART.005.001_Оцинк_1_2мм">
+          <div class="part-item-header">
+            <h4>S-MART.005.001_Оцинк_1,2мм</h4>
+            <span class="cat-pill">1,2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 005 (Боковины и профили)</span>
+            <a href="S-MART.005.001_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 005 (Боковины и профили)" data-id="S-MART.005.002_Оцинк_0_5мм" onclick="selectPart('S-MART.005.002_Оцинк_0_5мм')" id="card-S-MART.005.002_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.005.002_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 005 (Боковины и профили)</span>
+            <a href="S-MART.005.002_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 005 (Боковины и профили)" data-id="S-MART.005.003_Оцинк_0_5мм" onclick="selectPart('S-MART.005.003_Оцинк_0_5мм')" id="card-S-MART.005.003_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.005.003_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 005 (Боковины и профили)</span>
+            <a href="S-MART.005.003_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 005 (Боковины и профили)" data-id="S-MART.005.004_Оцинк_0_5мм" onclick="selectPart('S-MART.005.004_Оцинк_0_5мм')" id="card-S-MART.005.004_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.005.004_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 005 (Боковины и профили)</span>
+            <a href="S-MART.005.004_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 005 (Боковины и профили)" data-id="S-MART.005.005_Оцинк_0_5мм" onclick="selectPart('S-MART.005.005_Оцинк_0_5мм')" id="card-S-MART.005.005_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.005.005_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 005 (Боковины и профили)</span>
+            <a href="S-MART.005.005_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 005 (Боковины и профили)" data-id="S-MART.005.006_Оцинк_0_5мм" onclick="selectPart('S-MART.005.006_Оцинк_0_5мм')" id="card-S-MART.005.006_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>S-MART.005.006_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 005 (Боковины и профили)</span>
+            <a href="S-MART.005.006_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="SMART.001.002_Оцинк_0_5мм" onclick="selectPart('SMART.001.002_Оцинк_0_5мм')" id="card-SMART.001.002_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.001.002_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="SMART.001.002_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="SMART.001.003_Оцинк_0_5мм" onclick="selectPart('SMART.001.003_Оцинк_0_5мм')" id="card-SMART.001.003_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.001.003_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="SMART.001.003_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="SMART.001.004_Оцинк_0_5мм" onclick="selectPart('SMART.001.004_Оцинк_0_5мм')" id="card-SMART.001.004_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.001.004_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="SMART.001.004_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="SMART.001.005_Оцинк_0_5мм" onclick="selectPart('SMART.001.005_Оцинк_0_5мм')" id="card-SMART.001.005_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.001.005_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="SMART.001.005_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="SMART.001.006_Оцинк_0_5мм" onclick="selectPart('SMART.001.006_Оцинк_0_5мм')" id="card-SMART.001.006_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.001.006_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="SMART.001.006_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="SMART.001.011_Оцинк_0_5мм" onclick="selectPart('SMART.001.011_Оцинк_0_5мм')" id="card-SMART.001.011_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.001.011_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="SMART.001.011_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="SMART.001.012_Оцинк_0_5мм" onclick="selectPart('SMART.001.012_Оцинк_0_5мм')" id="card-SMART.001.012_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.001.012_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="SMART.001.012_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="SMART.001.013_Оцинк_0_5мм" onclick="selectPart('SMART.001.013_Оцинк_0_5мм')" id="card-SMART.001.013_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.001.013_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="SMART.001.013_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="SMART.001.016_Оцинк_0_5мм" onclick="selectPart('SMART.001.016_Оцинк_0_5мм')" id="card-SMART.001.016_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.001.016_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="SMART.001.016_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 001 (Основание и распределение)" data-id="SMART.001.017_Оцинк_0_5мм" onclick="selectPart('SMART.001.017_Оцинк_0_5мм')" id="card-SMART.001.017_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.001.017_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 001 (Основание и распределение)</span>
+            <a href="SMART.001.017_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="SMART.002.002_Оцинк_0_5мм" onclick="selectPart('SMART.002.002_Оцинк_0_5мм')" id="card-SMART.002.002_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.002.002_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="SMART.002.002_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="SMART.002.003_Оцинк_0_5мм" onclick="selectPart('SMART.002.003_Оцинк_0_5мм')" id="card-SMART.002.003_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.002.003_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="SMART.002.003_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="SMART.002.004_Оцинк_0_5мм" onclick="selectPart('SMART.002.004_Оцинк_0_5мм')" id="card-SMART.002.004_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.002.004_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="SMART.002.004_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="SMART.002.005_Оцинк_0_5мм" onclick="selectPart('SMART.002.005_Оцинк_0_5мм')" id="card-SMART.002.005_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.002.005_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="SMART.002.005_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="SMART.002.007_Оцинк_0_5мм" onclick="selectPart('SMART.002.007_Оцинк_0_5мм')" id="card-SMART.002.007_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.002.007_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="SMART.002.007_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="SMART.002.008_Оцинк_0_5мм" onclick="selectPart('SMART.002.008_Оцинк_0_5мм')" id="card-SMART.002.008_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.002.008_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="SMART.002.008_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="SMART.002.009_Оцинк_0_5мм" onclick="selectPart('SMART.002.009_Оцинк_0_5мм')" id="card-SMART.002.009_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.002.009_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="SMART.002.009_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 002 (Каркас и короб)" data-id="SMART.002.010_Оцинк_0_5мм" onclick="selectPart('SMART.002.010_Оцинк_0_5мм')" id="card-SMART.002.010_Оцинк_0_5мм">
+          <div class="part-item-header">
+            <h4>SMART.002.010_Оцинк_0,5мм</h4>
+            <span class="cat-pill">0,5мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 002 (Каркас и короб)</span>
+            <a href="SMART.002.010_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="SMART.003.001_Чёрная_сталь_2мм" onclick="selectPart('SMART.003.001_Чёрная_сталь_2мм')" id="card-SMART.003.001_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>SMART.003.001_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="SMART.003.001_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="SMART.003.002_Чёрная_сталь_2мм" onclick="selectPart('SMART.003.002_Чёрная_сталь_2мм')" id="card-SMART.003.002_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>SMART.003.002_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="SMART.003.002_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="SMART.003.003_Чёрная_сталь_2мм" onclick="selectPart('SMART.003.003_Чёрная_сталь_2мм')" id="card-SMART.003.003_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>SMART.003.003_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="SMART.003.003_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="SMART.003.004_Чёрная_сталь_2мм" onclick="selectPart('SMART.003.004_Чёрная_сталь_2мм')" id="card-SMART.003.004_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>SMART.003.004_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="SMART.003.004_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="SMART.003.008_Чёрная_сталь_2мм" onclick="selectPart('SMART.003.008_Чёрная_сталь_2мм')" id="card-SMART.003.008_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>SMART.003.008_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="SMART.003.008_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="SMART.003.010_Чёрная_сталь_2мм" onclick="selectPart('SMART.003.010_Чёрная_сталь_2мм')" id="card-SMART.003.010_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>SMART.003.010_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="SMART.003.010_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Узел 003 (Стойки и кронштейны)" data-id="SMART.003.011_Чёрная_сталь_2мм" onclick="selectPart('SMART.003.011_Чёрная_сталь_2мм')" id="card-SMART.003.011_Чёрная_сталь_2мм">
+          <div class="part-item-header">
+            <h4>SMART.003.011_Чёрная сталь_2мм</h4>
+            <span class="cat-pill">2мм</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Узел 003 (Стойки и кронштейны)</span>
+            <a href="SMART.003.011_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Главная сборка" data-id="SMART_Сборка_Целиком" onclick="selectPart('SMART_Сборка_Целиком')" id="card-SMART_Сборка_Целиком">
+          <div class="part-item-header">
+            <h4>SMART_Сборка_Целиком</h4>
+            <span class="cat-pill">Сборочный габарит (2.5 м)</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Главная сборка</span>
+            <a href="SMART_%D0%A1%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_%D0%A6%D0%B5%D0%BB%D0%B8%D0%BA%D0%BE%D0%BC.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Подсборки изделия" data-id="Side_Panel_Double-Glazed_MIR_Подсборка" onclick="selectPart('Side_Panel_Double-Glazed_MIR_Подсборка')" id="card-Side_Panel_Double-Glazed_MIR_Подсборка">
+          <div class="part-item-header">
+            <h4>Side Panel Double-Glazed_MIR_Подсборка</h4>
+            <span class="cat-pill">Подсборка</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Подсборки изделия</span>
+            <a href="Side_Panel_Double-Glazed_MIR_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Подсборки изделия" data-id="Side_Panel_Double-Glazed_Подсборка" onclick="selectPart('Side_Panel_Double-Glazed_Подсборка')" id="card-Side_Panel_Double-Glazed_Подсборка">
+          <div class="part-item-header">
+            <h4>Side Panel Double-Glazed_Подсборка</h4>
+            <span class="cat-pill">Подсборка</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Подсборки изделия</span>
+            <a href="Side_Panel_Double-Glazed_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Подсборки изделия" data-id="Support_Подсборка" onclick="selectPart('Support_Подсборка')" id="card-Support_Подсборка">
+          <div class="part-item-header">
+            <h4>Support_Подсборка</h4>
+            <span class="cat-pill">Подсборка</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Подсборки изделия</span>
+            <a href="Support_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Подсборки изделия" data-id="double_glazing_MIR_Подсборка" onclick="selectPart('double_glazing_MIR_Подсборка')" id="card-double_glazing_MIR_Подсборка">
+          <div class="part-item-header">
+            <h4>double glazing_MIR_Подсборка</h4>
+            <span class="cat-pill">Подсборка</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Подсборки изделия</span>
+            <a href="double_glazing_MIR_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Подсборки изделия" data-id="double_glazing_Подсборка" onclick="selectPart('double_glazing_Подсборка')" id="card-double_glazing_Подсборка">
+          <div class="part-item-header">
+            <h4>double glazing_Подсборка</h4>
+            <span class="cat-pill">Подсборка</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Подсборки изделия</span>
+            <a href="double_glazing_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Подсборки изделия" data-id="fan_cooling_Open_Подсборка" onclick="selectPart('fan_cooling_Open_Подсборка')" id="card-fan_cooling_Open_Подсборка">
+          <div class="part-item-header">
+            <h4>fan cooling Open_Подсборка</h4>
+            <span class="cat-pill">Подсборка</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Подсборки изделия</span>
+            <a href="fan_cooling_Open_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        
+        <div class="part-item" data-category="Подсборки изделия" data-id="plus.Испаритель_S-MART_Подсборка" onclick="selectPart('plus.Испаритель_S-MART_Подсборка')" id="card-plus.Испаритель_S-MART_Подсборка">
+          <div class="part-item-header">
+            <h4>plus.Испаритель S-MART_Подсборка</h4>
+            <span class="cat-pill">Подсборка</span>
+          </div>
+          <div class="part-item-body">
+            <span class="file-name">Подсборки изделия</span>
+            <a href="plus.%D0%98%D1%81%D0%BF%D0%B0%D1%80%D0%B8%D1%82%D0%B5%D0%BB%D1%8C_S-MART_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html" class="open-link" onclick="event.stopPropagation()">Открыть &rarr;</a>
+          </div>
+        </div>
+        </div>
+      </div>
+      <div class="sidebar-block">
+        <h3>Техкарта и QR выбранной детали</h3>
+        <div class="spec-card">
+          <table class="spec-table">
+            <tr><td>Категория:</td><td id="specCategory">-</td></tr>
+            <tr><td>Материал:</td><td id="specMaterial">-</td></tr>
+            <tr><td>Толщина:</td><td id="specThickness">-</td></tr>
+            <tr><td>Покрытие:</td><td id="specCoating">-</td></tr>
+            <tr><td>Цвет:</td><td id="specColor">-</td></tr>
+          </table>
+          <div class="qr-box">
+            <img id="specQrImg" src="" alt="QR">
+            <div class="qr-box-content">
+              <h5 id="specQrTitle">QR-код детали</h5>
+              <a id="specQrLink" href="" download>Скачать PNG этикетку &darr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <footer>
+    <div>Репозиторий: <a href="https://github.com/temurgapparovpronto-dot/S-MART-Otkrytaya_2.5_GLB_Export" target="_blank">temurgapparovpronto-dot/S-MART-Otkrytaya_2.5_GLB_Export</a></div>
+    <div>Маркировка и 3D-контроль для цеха листовой металлообработки и сборки</div>
+  </footer>
+  <script>
+    const parts = [{"id": "Open_Lower_Version_Подсборка", "title": "Open Lower Version_Подсборка", "glb": "Open%20Lower%20Version_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.glb", "qr": "Open_Lower_Version_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_qr.png", "html": "Open_Lower_Version_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html", "category": "Подсборки изделия", "material": "Сборочная единица (Комбинированная конструкция)", "thickness": "Подсборка", "coating": "Заводское сборочное покрытие", "color": "RAL 9005 / Оцинк", "layer": "По ТУ узла"}, {"id": "Open_Top_Version_Подсборка", "title": "Open Top Version_Подсборка", "glb": "Open%20Top%20Version_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.glb", "qr": "Open_Top_Version_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_qr.png", "html": "Open_Top_Version_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html", "category": "Подсборки изделия", "material": "Сборочная единица (Комбинированная конструкция)", "thickness": "Подсборка", "coating": "Заводское сборочное покрытие", "color": "RAL 9005 / Оцинк", "layer": "По ТУ узла"}, {"id": "Right_support_MIR_Подсборка", "title": "Right support_MIR_Подсборка", "glb": "Right%20support_MIR_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.glb", "qr": "Right_support_MIR_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_qr.png", "html": "Right_support_MIR_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html", "category": "Подсборки изделия", "material": "Сборочная единица (Комбинированная конструкция)", "thickness": "Подсборка", "coating": "Заводское сборочное покрытие", "color": "RAL 9005 / Оцинк", "layer": "По ТУ узла"}, {"id": "Right_support_Подсборка", "title": "Right support_Подсборка", "glb": "Right%20support_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.glb", "qr": "Right_support_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_qr.png", "html": "Right_support_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html", "category": "Подсборки изделия", "material": "Сборочная единица (Комбинированная конструкция)", "thickness": "Подсборка", "coating": "Заводское сборочное покрытие", "color": "RAL 9005 / Оцинк", "layer": "По ТУ узла"}, {"id": "S-MART.001.001_Closed_Оцинк_0_5мм", "title": "S-MART.001.001_Closed_Оцинк_0,5мм", "glb": "S-MART.001.001_Closed_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.001.001_Closed_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.001.001_Closed_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.001.005_CPY_Оцинк_0_5мм", "title": "S-MART.001.005_CPY_Оцинк_0,5мм", "glb": "S-MART.001.005_CPY_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.001.005_CPY_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.001.005_CPY_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.001.010_Open1_Оцинк_1мм", "title": "S-MART.001.010_Open1_Оцинк_1мм", "glb": "S-MART.001.010_Open1_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1%D0%BC%D0%BC.glb", "qr": "S-MART.001.010_Open1_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1%D0%BC%D0%BC_qr.png", "html": "S-MART.001.010_Open1_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "1мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.001.011_MIR_Оцинк_0_5мм", "title": "S-MART.001.011_MIR_Оцинк_0,5мм", "glb": "S-MART.001.011_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.001.011_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.001.011_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.001.012_MIR_Оцинк_0_5мм", "title": "S-MART.001.012_MIR_Оцинк_0,5мм", "glb": "S-MART.001.012_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.001.012_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.001.012_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.001.015_Open1_Оцинк_0_5мм", "title": "S-MART.001.015_Open1_Оцинк_0,5мм", "glb": "S-MART.001.015_Open1_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.001.015_Open1_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.001.015_Open1_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.001.019_Closed_Оцинк_0_5мм", "title": "S-MART.001.019_Closed_Оцинк_0,5мм", "glb": "S-MART.001.019_Closed_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.001.019_Closed_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.001.019_Closed_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.001.020_MIR_Оцинк_0_5мм", "title": "S-MART.001.020_MIR_Оцинк_0,5мм", "glb": "S-MART.001.020_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.001.020_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.001.020_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.001.020_Оцинк_0_5мм", "title": "S-MART.001.020_Оцинк_0,5мм", "glb": "S-MART.001.020_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.001.020_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.001.020_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.001.023_Оцинк_0_5мм", "title": "S-MART.001.023_Оцинк_0,5мм", "glb": "S-MART.001.023_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.001.023_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.001.023_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.001.024_Оцинк_0_5мм", "title": "S-MART.001.024_Оцинк_0,5мм", "glb": "S-MART.001.024_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.001.024_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.001.024_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.001.025_Оцинк_0_5мм", "title": "S-MART.001.025_Оцинк_0,5мм", "glb": "S-MART.001.025_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.001.025_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.001.025_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.001.026_Чёрная_сталь_2мм", "title": "S-MART.001.026_Чёрная сталь_2мм", "glb": "S-MART.001.026_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "S-MART.001.026_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "S-MART.001.026_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "S-MART.001.033_Оцинк_0_5мм", "title": "S-MART.001.033_Оцинк_0,5мм", "glb": "S-MART.001.033_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.001.033_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.001.033_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.001.034_Оцинк_0_5мм", "title": "S-MART.001.034_Оцинк_0,5мм", "glb": "S-MART.001.034_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.001.034_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.001.034_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.001.035_Оцинк_0_5мм", "title": "S-MART.001.035_Оцинк_0,5мм", "glb": "S-MART.001.035_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.001.035_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.001.035_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.002.007_MIR_Оцинк_0_5мм", "title": "S-MART.002.007_MIR_Оцинк_0,5мм", "glb": "S-MART.002.007_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.002.007_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.002.007_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.002.008_MIR_Оцинк_0_5мм", "title": "S-MART.002.008_MIR_Оцинк_0,5мм", "glb": "S-MART.002.008_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.002.008_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.002.008_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.002.009_MIR_Оцинк_0_5мм", "title": "S-MART.002.009_MIR_Оцинк_0,5мм", "glb": "S-MART.002.009_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.002.009_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.002.009_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.002.010_MIR_Оцинк_0_5мм", "title": "S-MART.002.010_MIR_Оцинк_0,5мм", "glb": "S-MART.002.010_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.002.010_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.002.010_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.002.011_CPY_Чёрная_сталь_2мм", "title": "S-MART.002.011_CPY_Чёрная сталь_2мм", "glb": "S-MART.002.011_CPY_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "S-MART.002.011_CPY_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "S-MART.002.011_CPY_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "S-MART.002.011_Чёрная_сталь_2мм", "title": "S-MART.002.011_Чёрная сталь_2мм", "glb": "S-MART.002.011_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "S-MART.002.011_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "S-MART.002.011_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "S-MART.002.012_Оцинк_0_5мм", "title": "S-MART.002.012_Оцинк_0,5мм", "glb": "S-MART.002.012_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.002.012_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.002.012_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.002.020_Оцинк_0_5мм", "title": "S-MART.002.020_Оцинк_0,5мм", "glb": "S-MART.002.020_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.002.020_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.002.020_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.003.001_MIR_Чёрная_сталь_2мм", "title": "S-MART.003.001_MIR_Чёрная сталь_2мм", "glb": "S-MART.003.001_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "S-MART.003.001_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "S-MART.003.001_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "S-MART.003.002_MIR_Чёрная_сталь_2мм", "title": "S-MART.003.002_MIR_Чёрная сталь_2мм", "glb": "S-MART.003.002_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "S-MART.003.002_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "S-MART.003.002_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "S-MART.003.003_MIR_Чёрная_сталь_2мм", "title": "S-MART.003.003_MIR_Чёрная сталь_2мм", "glb": "S-MART.003.003_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "S-MART.003.003_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "S-MART.003.003_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "S-MART.003.004_MIR_Чёрная_сталь_2мм", "title": "S-MART.003.004_MIR_Чёрная сталь_2мм", "glb": "S-MART.003.004_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "S-MART.003.004_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "S-MART.003.004_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "S-MART.003.005_CPY_MIR_Чёрная_сталь_2мм", "title": "S-MART.003.005_CPY_MIR_Чёрная сталь_2мм", "glb": "S-MART.003.005_CPY_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "S-MART.003.005_CPY_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "S-MART.003.005_CPY_MIR_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "S-MART.003.005_CPY_Чёрная_сталь_2мм", "title": "S-MART.003.005_CPY_Чёрная сталь_2мм", "glb": "S-MART.003.005_CPY_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "S-MART.003.005_CPY_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "S-MART.003.005_CPY_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "S-MART.003.006_CPY1_Чёрная_сталь_2мм", "title": "S-MART.003.006_CPY1_Чёрная сталь_2мм", "glb": "S-MART.003.006_CPY1_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "S-MART.003.006_CPY1_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "S-MART.003.006_CPY1_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "S-MART.003.006_CPY_CPY_Чёрная_сталь_2мм", "title": "S-MART.003.006_CPY_CPY_Чёрная сталь_2мм", "glb": "S-MART.003.006_CPY_CPY_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "S-MART.003.006_CPY_CPY_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "S-MART.003.006_CPY_CPY_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "S-MART.003.012_Оцинк_1_2мм", "title": "S-MART.003.012_Оцинк_1,2мм", "glb": "S-MART.003.012_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1%2C2%D0%BC%D0%BC.glb", "qr": "S-MART.003.012_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1_2%D0%BC%D0%BC_qr.png", "html": "S-MART.003.012_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "1,2мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.004.011_Чёрная_сталь_2мм", "title": "S-MART.004.011_Чёрная сталь_2мм", "glb": "S-MART.004.011_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "S-MART.004.011_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "S-MART.004.011_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 004 (Монтажные элементы)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "S-MART.005.001_MIR_Оцинк_1_2мм", "title": "S-MART.005.001_MIR_Оцинк_1,2мм", "glb": "S-MART.005.001_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1%2C2%D0%BC%D0%BC.glb", "qr": "S-MART.005.001_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1_2%D0%BC%D0%BC_qr.png", "html": "S-MART.005.001_MIR_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1_2%D0%BC%D0%BC.html", "category": "Узел 005 (Боковины и профили)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "1,2мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.005.001_Оцинк_1_2мм", "title": "S-MART.005.001_Оцинк_1,2мм", "glb": "S-MART.005.001_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1%2C2%D0%BC%D0%BC.glb", "qr": "S-MART.005.001_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1_2%D0%BC%D0%BC_qr.png", "html": "S-MART.005.001_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_1_2%D0%BC%D0%BC.html", "category": "Узел 005 (Боковины и профили)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "1,2мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.005.002_Оцинк_0_5мм", "title": "S-MART.005.002_Оцинк_0,5мм", "glb": "S-MART.005.002_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.005.002_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.005.002_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 005 (Боковины и профили)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.005.003_Оцинк_0_5мм", "title": "S-MART.005.003_Оцинк_0,5мм", "glb": "S-MART.005.003_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.005.003_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.005.003_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 005 (Боковины и профили)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.005.004_Оцинк_0_5мм", "title": "S-MART.005.004_Оцинк_0,5мм", "glb": "S-MART.005.004_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.005.004_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.005.004_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 005 (Боковины и профили)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.005.005_Оцинк_0_5мм", "title": "S-MART.005.005_Оцинк_0,5мм", "glb": "S-MART.005.005_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.005.005_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.005.005_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 005 (Боковины и профили)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "S-MART.005.006_Оцинк_0_5мм", "title": "S-MART.005.006_Оцинк_0,5мм", "glb": "S-MART.005.006_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "S-MART.005.006_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "S-MART.005.006_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 005 (Боковины и профили)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.001.002_Оцинк_0_5мм", "title": "SMART.001.002_Оцинк_0,5мм", "glb": "SMART.001.002_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.001.002_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.001.002_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.001.003_Оцинк_0_5мм", "title": "SMART.001.003_Оцинк_0,5мм", "glb": "SMART.001.003_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.001.003_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.001.003_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.001.004_Оцинк_0_5мм", "title": "SMART.001.004_Оцинк_0,5мм", "glb": "SMART.001.004_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.001.004_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.001.004_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.001.005_Оцинк_0_5мм", "title": "SMART.001.005_Оцинк_0,5мм", "glb": "SMART.001.005_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.001.005_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.001.005_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.001.006_Оцинк_0_5мм", "title": "SMART.001.006_Оцинк_0,5мм", "glb": "SMART.001.006_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.001.006_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.001.006_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.001.011_Оцинк_0_5мм", "title": "SMART.001.011_Оцинк_0,5мм", "glb": "SMART.001.011_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.001.011_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.001.011_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.001.012_Оцинк_0_5мм", "title": "SMART.001.012_Оцинк_0,5мм", "glb": "SMART.001.012_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.001.012_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.001.012_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.001.013_Оцинк_0_5мм", "title": "SMART.001.013_Оцинк_0,5мм", "glb": "SMART.001.013_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.001.013_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.001.013_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.001.016_Оцинк_0_5мм", "title": "SMART.001.016_Оцинк_0,5мм", "glb": "SMART.001.016_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.001.016_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.001.016_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.001.017_Оцинк_0_5мм", "title": "SMART.001.017_Оцинк_0,5мм", "glb": "SMART.001.017_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.001.017_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.001.017_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 001 (Основание и распределение)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.002.002_Оцинк_0_5мм", "title": "SMART.002.002_Оцинк_0,5мм", "glb": "SMART.002.002_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.002.002_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.002.002_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.002.003_Оцинк_0_5мм", "title": "SMART.002.003_Оцинк_0,5мм", "glb": "SMART.002.003_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.002.003_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.002.003_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.002.004_Оцинк_0_5мм", "title": "SMART.002.004_Оцинк_0,5мм", "glb": "SMART.002.004_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.002.004_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.002.004_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.002.005_Оцинк_0_5мм", "title": "SMART.002.005_Оцинк_0,5мм", "glb": "SMART.002.005_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.002.005_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.002.005_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.002.007_Оцинк_0_5мм", "title": "SMART.002.007_Оцинк_0,5мм", "glb": "SMART.002.007_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.002.007_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.002.007_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.002.008_Оцинк_0_5мм", "title": "SMART.002.008_Оцинк_0,5мм", "glb": "SMART.002.008_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.002.008_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.002.008_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.002.009_Оцинк_0_5мм", "title": "SMART.002.009_Оцинк_0,5мм", "glb": "SMART.002.009_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.002.009_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.002.009_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.002.010_Оцинк_0_5мм", "title": "SMART.002.010_Оцинк_0,5мм", "glb": "SMART.002.010_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0%2C5%D0%BC%D0%BC.glb", "qr": "SMART.002.010_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC_qr.png", "html": "SMART.002.010_%D0%9E%D1%86%D0%B8%D0%BD%D0%BA_0_5%D0%BC%D0%BC.html", "category": "Узел 002 (Каркас и короб)", "material": "Оцинкованная листовая сталь ГОСТ 14918-2020", "thickness": "0,5мм", "coating": "Защитный цинковый слой Zn", "color": "Цинк (серебристый металлик)", "layer": "1-й класс оцинкования"}, {"id": "SMART.003.001_Чёрная_сталь_2мм", "title": "SMART.003.001_Чёрная сталь_2мм", "glb": "SMART.003.001_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "SMART.003.001_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "SMART.003.001_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "SMART.003.002_Чёрная_сталь_2мм", "title": "SMART.003.002_Чёрная сталь_2мм", "glb": "SMART.003.002_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "SMART.003.002_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "SMART.003.002_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "SMART.003.003_Чёрная_сталь_2мм", "title": "SMART.003.003_Чёрная сталь_2мм", "glb": "SMART.003.003_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "SMART.003.003_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "SMART.003.003_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "SMART.003.004_Чёрная_сталь_2мм", "title": "SMART.003.004_Чёрная сталь_2мм", "glb": "SMART.003.004_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "SMART.003.004_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "SMART.003.004_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "SMART.003.008_Чёрная_сталь_2мм", "title": "SMART.003.008_Чёрная сталь_2мм", "glb": "SMART.003.008_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "SMART.003.008_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "SMART.003.008_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "SMART.003.010_Чёрная_сталь_2мм", "title": "SMART.003.010_Чёрная сталь_2мм", "glb": "SMART.003.010_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "SMART.003.010_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "SMART.003.010_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "SMART.003.011_Чёрная_сталь_2мм", "title": "SMART.003.011_Чёрная сталь_2мм", "glb": "SMART.003.011_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F%20%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.glb", "qr": "SMART.003.011_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC_qr.png", "html": "SMART.003.011_%D0%A7%D1%91%D1%80%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D0%BB%D1%8C_2%D0%BC%D0%BC.html", "category": "Узел 003 (Стойки и кронштейны)", "material": "Конструкционная холоднокатаная сталь 08пс", "thickness": "2мм", "coating": "Порошково-полимерная окраска", "color": "RAL 9005 (Чёрный муар) / RAL 7016", "layer": "80 - 120 мкм"}, {"id": "SMART_Сборка_Целиком", "title": "SMART_Сборка_Целиком", "glb": "SMART_%D0%A1%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_%D0%A6%D0%B5%D0%BB%D0%B8%D0%BA%D0%BE%D0%BC.glb", "qr": "SMART_%D0%A1%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_%D0%A6%D0%B5%D0%BB%D0%B8%D0%BA%D0%BE%D0%BC_qr.png", "html": "SMART_%D0%A1%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_%D0%A6%D0%B5%D0%BB%D0%B8%D0%BA%D0%BE%D0%BC.html", "category": "Главная сборка", "material": "Металлоконструкция (2.5 м) + Оцинковка + ППУ изоляция + Остекление", "thickness": "Сборочный габарит (2.5 м)", "coating": "Комбинированное (порошковая окраска + цинк)", "color": "RAL 9005 (Черный муар)", "layer": "По ТУ изделия"}, {"id": "Side_Panel_Double-Glazed_MIR_Подсборка", "title": "Side Panel Double-Glazed_MIR_Подсборка", "glb": "Side%20Panel%20Double-Glazed_MIR_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.glb", "qr": "Side_Panel_Double-Glazed_MIR_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_qr.png", "html": "Side_Panel_Double-Glazed_MIR_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html", "category": "Подсборки изделия", "material": "Энергосберегающий стеклопакет (Double Glazing) + Алюминиевый профиль", "thickness": "Подсборка", "coating": "Шелкография, анодирование профиля", "color": "Прозрачное стекло / Чёрная рамка", "layer": "Стеклопакет"}, {"id": "Side_Panel_Double-Glazed_Подсборка", "title": "Side Panel Double-Glazed_Подсборка", "glb": "Side%20Panel%20Double-Glazed_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.glb", "qr": "Side_Panel_Double-Glazed_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_qr.png", "html": "Side_Panel_Double-Glazed_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html", "category": "Подсборки изделия", "material": "Энергосберегающий стеклопакет (Double Glazing) + Алюминиевый профиль", "thickness": "Подсборка", "coating": "Шелкография, анодирование профиля", "color": "Прозрачное стекло / Чёрная рамка", "layer": "Стеклопакет"}, {"id": "Support_Подсборка", "title": "Support_Подсборка", "glb": "Support_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.glb", "qr": "Support_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_qr.png", "html": "Support_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html", "category": "Подсборки изделия", "material": "Сборочная единица (Комбинированная конструкция)", "thickness": "Подсборка", "coating": "Заводское сборочное покрытие", "color": "RAL 9005 / Оцинк", "layer": "По ТУ узла"}, {"id": "double_glazing_MIR_Подсборка", "title": "double glazing_MIR_Подсборка", "glb": "double%20glazing_MIR_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.glb", "qr": "double_glazing_MIR_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_qr.png", "html": "double_glazing_MIR_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html", "category": "Подсборки изделия", "material": "Энергосберегающий стеклопакет (Double Glazing) + Алюминиевый профиль", "thickness": "Подсборка", "coating": "Шелкография, анодирование профиля", "color": "Прозрачное стекло / Чёрная рамка", "layer": "Стеклопакет"}, {"id": "double_glazing_Подсборка", "title": "double glazing_Подсборка", "glb": "double%20glazing_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.glb", "qr": "double_glazing_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_qr.png", "html": "double_glazing_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html", "category": "Подсборки изделия", "material": "Энергосберегающий стеклопакет (Double Glazing) + Алюминиевый профиль", "thickness": "Подсборка", "coating": "Шелкография, анодирование профиля", "color": "Прозрачное стекло / Чёрная рамка", "layer": "Стеклопакет"}, {"id": "fan_cooling_Open_Подсборка", "title": "fan cooling Open_Подсборка", "glb": "fan%20cooling%20Open_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.glb", "qr": "fan_cooling_Open_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_qr.png", "html": "fan_cooling_Open_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html", "category": "Подсборки изделия", "material": "Вентиляторный блок охлаждения в металлическом корпусе", "thickness": "Подсборка", "coating": "Заводское сборочное покрытие", "color": "RAL 9005 / Оцинк", "layer": "По ТУ узла"}, {"id": "plus.Испаритель_S-MART_Подсборка", "title": "plus.Испаритель S-MART_Подсборка", "glb": "plus.%D0%98%D1%81%D0%BF%D0%B0%D1%80%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%20S-MART_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.glb", "qr": "plus.%D0%98%D1%81%D0%BF%D0%B0%D1%80%D0%B8%D1%82%D0%B5%D0%BB%D1%8C_S-MART_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0_qr.png", "html": "plus.%D0%98%D1%81%D0%BF%D0%B0%D1%80%D0%B8%D1%82%D0%B5%D0%BB%D1%8C_S-MART_%D0%9F%D0%BE%D0%B4%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0.html", "category": "Подсборки изделия", "material": "Медно-алюминиевый ребристый испаритель", "thickness": "Подсборка", "coating": "Заводское сборочное покрытие", "color": "RAL 9005 / Оцинк", "layer": "По ТУ узла"}];
+    const viewer = document.getElementById('mainViewer');
+    let currentCategory = 'all';
+
+    function selectPart(id) {
+      const p = parts.find(item => item.id === id);
+      if (!p) return;
+      viewer.src = p.glb;
+      document.getElementById('activeTitle').textContent = p.title;
+      document.getElementById('dedicatedLink').href = p.html;
+      document.getElementById('specCategory').textContent = p.category;
+      document.getElementById('specMaterial').textContent = p.material;
+      document.getElementById('specThickness').textContent = p.thickness;
+      document.getElementById('specCoating').textContent = p.coating;
+      document.getElementById('specColor').textContent = p.color;
+      document.getElementById('specQrImg').src = p.qr;
+      document.getElementById('specQrTitle').textContent = 'QR: ' + p.title;
+      document.getElementById('specQrLink').href = p.qr;
+      document.querySelectorAll('.part-item').forEach(el => el.classList.remove('active'));
+      const activeEl = document.getElementById('card-' + id);
+      if (activeEl) activeEl.classList.add('active');
+    }
+
+    function filterCategory(cat) {
+      currentCategory = cat;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        if ((cat === 'all' && btn.textContent.startsWith('Все')) || btn.textContent.startsWith(cat)) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      applyFilters();
+    }
+
+    function handleSearch() { applyFilters(); }
+
+    function applyFilters() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      document.querySelectorAll('.part-item').forEach(item => {
+        const cat = item.getAttribute('data-category');
+        const text = item.textContent.toLowerCase();
+        const matchCat = (currentCategory === 'all' || cat === currentCategory);
+        const matchQuery = !q || text.includes(q);
+        item.style.display = (matchCat && matchQuery) ? 'block' : 'none';
+      });
+    }
+
+    const initialPart = parts.find(p => p.id.includes('Сборка_Целиком')) || parts[0];
+    if (initialPart) selectPart(initialPart.id);
+  </script>
+</body>
+</html>
